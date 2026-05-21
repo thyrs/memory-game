@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Networking Memory Game</title>
+
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  h2 {
+    color: #00bfff;
+    margin: 10px 0;
+  }
+
+  p {
+    margin: 5px 0;
+  }
+
+  .game-board {
+    height: 75vh;
+    width: 95vw;
+    margin: 0 auto;
+    display: grid;
+    gap: 10px;
+  }
+
+  .card {
+    background: #222;
+    border: 2px solid #00bfff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: clamp(12px, 1.6vw, 18px);
+    user-select: none;
+  }
+
+  .card.flipped {
+    background: #00bfff;
+    color: #000;
+  }
+
+  .card.matched {
+    background: #0f0;
+    color: #000;
+    cursor: default;
+  }
+
+  .card-number {
+    color: #777;
+    font-size: 1.4em;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>🧩 Networking Memory Game</h2>
+<p>Match the <strong>network concept</strong> with its <strong>value</strong>.</p>
+
+<div class="game-board" id="gameBoard"></div>
+
+<!-- YAML parser -->
+<script src="js-yaml.min.js"></script>
+
+<script>
+const board = document.getElementById("gameBoard");
+let flippedCards = [];
+
+/* Load YAML */
+fetch("pairs.yaml")
+  .then(res => res.text())
+  .then(text => jsyaml.load(text))
+  .then(data => initGame(data));
+
+function initGame(data) {
+  const pairs = data.pairs;
+
+  let cards = [];
+  pairs.forEach((pair, index) => {
+    cards.push(
+      { id: index, text: pair.concept },
+      { id: index, text: pair.match }
+    );
+  });
+
+  cards.sort(() => Math.random() - 0.5);
+
+  const total = cards.length;
+  const cols = Math.ceil(Math.sqrt(total));
+  const rows = Math.ceil(total / cols);
+
+  board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  board.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+  cards.forEach((item, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.id = item.id;
+    card.dataset.text = item.text;
+    card.dataset.number = i + 1;
+
+    card.innerHTML = `<span class="card-number">${i + 1}</span>`;
+    card.onclick = () => flipCard(card);
+
+    board.appendChild(card);
+  });
+}
+
+function flipCard(card) {
+  if (
+    card.classList.contains("flipped") ||
+    card.classList.contains("matched") ||
+    flippedCards.length === 2
+  ) return;
+
+  card.classList.add("flipped");
+  card.textContent = card.dataset.text;
+  flippedCards.push(card);
+
+  if (flippedCards.length === 2) {
+    setTimeout(checkMatch, 500);
+  }
+}
+
+function checkMatch() {
+  const [a, b] = flippedCards;
+
+  if (a.dataset.id === b.dataset.id) {
+    a.classList.add("matched");
+    b.classList.add("matched");
+  } else {
+    reset(a);
+    reset(b);
+  }
+
+  flippedCards = [];
+}
+
+function reset(card) {
+  card.classList.remove("flipped");
+  card.innerHTML = `<span class="card-number">${card.dataset.number}</span>`;
+}
+</script>
+
+</body>
+</html>
