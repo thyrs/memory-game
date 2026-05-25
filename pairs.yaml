@@ -16,3 +16,6 @@ pairs:
 
   - concept: burro
     match: burra
+
+  - concept: gato
+    match: gata
